@@ -1,177 +1,1096 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Demo Devices Template",
+  "name": "LaMetric",
   "description": {
-    "en": "Starter template showing sensors, a switch, a dimmable light and a smart plug.",
-    "fr": "Template de démarrage : capteurs, interrupteur, lampe variable et prise connectée."
+    "en": "LaMetric TIME and SKY clocks: messages from your scenes, brightness, volume, apps and timer.",
+    "fr": "Horloges LaMetric TIME et SKY : messages de vos scènes, luminosité, volume, applications, minuteur.",
+    "de": "LaMetric TIME und SKY: Nachrichten aus Szenen, Helligkeit, Lautstärke, Apps und Timer.",
+    "es": "Relojes LaMetric TIME y SKY: mensajes de sus escenas, brillo, volumen, aplicaciones y temporizador."
   },
   "version": "1.0.0",
-  "docker_image": "ghcr.io/gladysassistant/integration-template-js:1.0.0",
-  "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/GladysAssistant/integration-template-js/master/cover.png",
-  "categories": ["lighting", "security", "environment"],
-  "transports": ["local", "cloud"],
+  "docker_image": "ghcr.io/guim31/gladys-lametric:1.0.0",
+  "gladys_version": ">=5.2.0",
+  "cover_image": "https://raw.githubusercontent.com/guim31/gladys-lametric/main/cover.png",
+  "categories": ["notifications", "multimedia"],
+  "transports": ["local"],
+  "network_discovery": [
+    {
+      "type": "ssdp",
+      "st": "urn:schemas-upnp-org:device:LaMetric:1"
+    }
+  ],
   "config_schema": [
     {
       "key": "intro",
       "type": "section",
-      "label": { "en": "Getting started", "fr": "Pour commencer" },
+      "label": {
+        "en": "Your LaMetric",
+        "fr": "Votre LaMetric",
+        "de": "Deine LaMetric",
+        "es": "Su LaMetric"
+      },
       "description": {
-        "en": "The demo weather station reads real data from the free Open-Meteo API: pick the coordinates to observe. No account, no API key.",
-        "fr": "La station météo de démonstration lit de vraies données via l'API gratuite Open-Meteo : choisissez les coordonnées à observer. Pas de compte, pas de clé d'API."
+        "en": "LaMetric TIME or SKY on your local network, up to three. Each clock has its own API key: sign in on developer.lametric.com, open Devices and copy the key of the clock.",
+        "fr": "LaMetric TIME ou SKY de votre réseau local, jusqu’à trois. Chaque horloge a sa clé d’API : connectez-vous sur developer.lametric.com, ouvrez Devices et copiez la clé de l’horloge.",
+        "de": "LaMetric TIME oder SKY in deinem lokalen Netzwerk, bis zu drei. Jede Uhr hat ihren API-Schlüssel: Melde dich auf developer.lametric.com an, öffne Devices und kopiere den Schlüssel der Uhr.",
+        "es": "LaMetric TIME o SKY de su red local, hasta tres. Cada reloj tiene su clave de API: inicie sesión en developer.lametric.com, abra Devices y copie la clave del reloj."
       },
       "links": [
         {
-          "url": "https://open-meteo.com/en/docs",
-          "label": { "en": "Open-Meteo documentation", "fr": "Documentation Open-Meteo" }
+          "url": "https://developer.lametric.com/user/devices",
+          "label": {
+            "en": "My devices on developer.lametric.com",
+            "fr": "Mes appareils sur developer.lametric.com",
+            "de": "Meine Geräte auf developer.lametric.com",
+            "es": "Mis dispositivos en developer.lametric.com"
+          }
+        },
+        {
+          "url": "https://github.com/guim31/gladys-lametric/blob/main/docs/en.md",
+          "label": {
+            "en": "Setup guide",
+            "fr": "Guide d’installation",
+            "de": "Installationsanleitung",
+            "es": "Guía de instalación"
+          }
         }
       ]
     },
     {
-      "key": "latitude",
-      "type": "number",
-      "label": { "en": "Latitude", "fr": "Latitude" },
-      "description": {
-        "en": "Latitude used for the demo weather sensor.",
-        "fr": "Latitude utilisée par le capteur météo de démonstration."
+      "key": "clock_1_address",
+      "type": "string",
+      "label": {
+        "en": "Address",
+        "fr": "Adresse",
+        "de": "Adresse",
+        "es": "Dirección"
       },
-      "placeholder": { "en": "e.g. 48.8566", "fr": "ex. 48.8566" },
-      "required": true,
-      "default": 48.8566,
-      "min": -90,
-      "max": 90
+      "description": {
+        "en": "IP address of the clock. Empty: Gladys looks for it on the network.",
+        "fr": "Adresse IP de l’horloge. Vide : Gladys la cherche sur le réseau.",
+        "de": "IP-Adresse der Uhr. Leer: Gladys sucht sie im Netzwerk.",
+        "es": "Dirección IP del reloj. Vacío: Gladys lo busca en la red."
+      },
+      "placeholder": {
+        "en": "e.g. 192.168.1.20",
+        "fr": "ex. 192.168.1.20",
+        "de": "z. B. 192.168.1.20",
+        "es": "p. ej. 192.168.1.20"
+      },
+      "required": false
     },
     {
-      "key": "longitude",
-      "type": "number",
-      "label": { "en": "Longitude", "fr": "Longitude" },
-      "description": {
-        "en": "Longitude used for the demo weather sensor.",
-        "fr": "Longitude utilisée par le capteur météo de démonstration."
+      "key": "clock_1_api_key",
+      "type": "secret",
+      "label": {
+        "en": "API key",
+        "fr": "Clé d’API",
+        "de": "API-Schlüssel",
+        "es": "Clave de API"
       },
-      "placeholder": { "en": "e.g. 2.3522", "fr": "ex. 2.3522" },
-      "required": true,
-      "default": 2.3522,
-      "min": -180,
-      "max": 180
+      "description": {
+        "en": "The API key of this clock: developer.lametric.com, Devices.",
+        "fr": "La clé d’API de cette horloge : developer.lametric.com, Devices.",
+        "de": "Der API-Schlüssel dieser Uhr: developer.lametric.com, Devices.",
+        "es": "La clave de API de este reloj: developer.lametric.com, Devices."
+      },
+      "required": false
     },
     {
-      "key": "unit",
+      "key": "clock_2",
+      "type": "section",
+      "label": {
+        "en": "Second LaMetric (optional)",
+        "fr": "Deuxième LaMetric (facultatif)",
+        "de": "Zweite LaMetric (optional)",
+        "es": "Segunda LaMetric (opcional)"
+      },
+      "description": {
+        "en": "Same fields, for another clock.",
+        "fr": "Les mêmes champs, pour une autre horloge.",
+        "de": "Dieselben Felder, für eine weitere Uhr.",
+        "es": "Los mismos campos, para otro reloj."
+      }
+    },
+    {
+      "key": "clock_2_address",
+      "type": "string",
+      "label": {
+        "en": "Address",
+        "fr": "Adresse",
+        "de": "Adresse",
+        "es": "Dirección"
+      },
+      "description": {
+        "en": "IP address of the clock. Empty: Gladys looks for it on the network.",
+        "fr": "Adresse IP de l’horloge. Vide : Gladys la cherche sur le réseau.",
+        "de": "IP-Adresse der Uhr. Leer: Gladys sucht sie im Netzwerk.",
+        "es": "Dirección IP del reloj. Vacío: Gladys lo busca en la red."
+      },
+      "placeholder": {
+        "en": "e.g. 192.168.1.20",
+        "fr": "ex. 192.168.1.20",
+        "de": "z. B. 192.168.1.20",
+        "es": "p. ej. 192.168.1.20"
+      },
+      "required": false
+    },
+    {
+      "key": "clock_2_api_key",
+      "type": "secret",
+      "label": {
+        "en": "API key",
+        "fr": "Clé d’API",
+        "de": "API-Schlüssel",
+        "es": "Clave de API"
+      },
+      "description": {
+        "en": "The API key of this clock: developer.lametric.com, Devices.",
+        "fr": "La clé d’API de cette horloge : developer.lametric.com, Devices.",
+        "de": "Der API-Schlüssel dieser Uhr: developer.lametric.com, Devices.",
+        "es": "La clave de API de este reloj: developer.lametric.com, Devices."
+      },
+      "required": false
+    },
+    {
+      "key": "clock_3",
+      "type": "section",
+      "label": {
+        "en": "Third LaMetric (optional)",
+        "fr": "Troisième LaMetric (facultatif)",
+        "de": "Dritte LaMetric (optional)",
+        "es": "Tercera LaMetric (opcional)"
+      },
+      "description": {
+        "en": "Same fields, for a third clock.",
+        "fr": "Les mêmes champs, pour une troisième horloge.",
+        "de": "Dieselben Felder, für eine dritte Uhr.",
+        "es": "Los mismos campos, para un tercer reloj."
+      }
+    },
+    {
+      "key": "clock_3_address",
+      "type": "string",
+      "label": {
+        "en": "Address",
+        "fr": "Adresse",
+        "de": "Adresse",
+        "es": "Dirección"
+      },
+      "description": {
+        "en": "IP address of the clock. Empty: Gladys looks for it on the network.",
+        "fr": "Adresse IP de l’horloge. Vide : Gladys la cherche sur le réseau.",
+        "de": "IP-Adresse der Uhr. Leer: Gladys sucht sie im Netzwerk.",
+        "es": "Dirección IP del reloj. Vacío: Gladys lo busca en la red."
+      },
+      "placeholder": {
+        "en": "e.g. 192.168.1.20",
+        "fr": "ex. 192.168.1.20",
+        "de": "z. B. 192.168.1.20",
+        "es": "p. ej. 192.168.1.20"
+      },
+      "required": false
+    },
+    {
+      "key": "clock_3_api_key",
+      "type": "secret",
+      "label": {
+        "en": "API key",
+        "fr": "Clé d’API",
+        "de": "API-Schlüssel",
+        "es": "Clave de API"
+      },
+      "description": {
+        "en": "The API key of this clock: developer.lametric.com, Devices.",
+        "fr": "La clé d’API de cette horloge : developer.lametric.com, Devices.",
+        "de": "Der API-Schlüssel dieser Uhr: developer.lametric.com, Devices.",
+        "es": "La clave de API de este reloj: developer.lametric.com, Devices."
+      },
+      "required": false
+    },
+    {
+      "key": "settings",
+      "type": "section",
+      "label": {
+        "en": "Settings",
+        "fr": "Réglages",
+        "de": "Einstellungen",
+        "es": "Ajustes"
+      },
+      "description": {
+        "en": "The clocks are read on your local network only.",
+        "fr": "Les horloges ne sont lues que sur votre réseau local.",
+        "de": "Die Uhren werden nur in deinem lokalen Netzwerk gelesen.",
+        "es": "Los relojes solo se leen en su red local."
+      }
+    },
+    {
+      "key": "poll_interval",
       "type": "select",
-      "label": { "en": "Temperature unit", "fr": "Unité de température" },
+      "label": {
+        "en": "Refresh interval",
+        "fr": "Intervalle de rafraîchissement",
+        "de": "Aktualisierungsintervall",
+        "es": "Intervalo de actualización"
+      },
       "required": false,
-      "default": "celsius",
+      "default": "30",
       "options": [
-        { "value": "celsius", "label": { "en": "Celsius", "fr": "Celsius" } },
-        { "value": "fahrenheit", "label": { "en": "Fahrenheit", "fr": "Fahrenheit" } }
+        {
+          "value": "15",
+          "label": {
+            "en": "15 seconds",
+            "fr": "15 secondes",
+            "de": "15 Sekunden",
+            "es": "15 segundos"
+          }
+        },
+        {
+          "value": "30",
+          "label": {
+            "en": "30 seconds",
+            "fr": "30 secondes",
+            "de": "30 Sekunden",
+            "es": "30 segundos"
+          }
+        },
+        {
+          "value": "60",
+          "label": {
+            "en": "1 minute",
+            "fr": "1 minute",
+            "de": "1 Minute",
+            "es": "1 minuto"
+          }
+        },
+        {
+          "value": "120",
+          "label": {
+            "en": "2 minutes",
+            "fr": "2 minutes",
+            "de": "2 Minuten",
+            "es": "2 minutos"
+          }
+        },
+        {
+          "value": "300",
+          "label": {
+            "en": "5 minutes",
+            "fr": "5 minutes",
+            "de": "5 Minuten",
+            "es": "5 minutos"
+          }
+        }
       ]
     },
     {
-      "key": "poll_frequency",
-      "type": "number",
-      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
+      "key": "language",
+      "type": "select",
+      "label": {
+        "en": "Language of the feature names",
+        "fr": "Langue des noms de fonctionnalités",
+        "de": "Sprache der Funktionsnamen",
+        "es": "Idioma de los nombres de funciones"
+      },
       "description": {
-        "en": "How often sensors are polled, in seconds (one minute minimum).",
-        "fr": "Fréquence d'interrogation des capteurs, en secondes (une minute minimum)."
+        "en": "Used when a device is created in Gladys, and for the messages of the integration.",
+        "fr": "Utilisée à la création d’un appareil dans Gladys, et pour les messages de l’intégration.",
+        "de": "Wird beim Anlegen eines Geräts in Gladys und für die Meldungen der Integration verwendet.",
+        "es": "Se usa al crear un dispositivo en Gladys y para los mensajes de la integración."
       },
       "required": false,
-      "default": 300,
-      "min": 60,
-      "max": 3600
+      "default": "fr",
+      "options": [
+        {
+          "value": "en",
+          "label": {
+            "en": "English",
+            "fr": "Anglais",
+            "de": "Englisch",
+            "es": "Inglés"
+          }
+        },
+        {
+          "value": "fr",
+          "label": {
+            "en": "French",
+            "fr": "Français",
+            "de": "Französisch",
+            "es": "Francés"
+          }
+        },
+        {
+          "value": "de",
+          "label": {
+            "en": "German",
+            "fr": "Allemand",
+            "de": "Deutsch",
+            "es": "Alemán"
+          }
+        },
+        {
+          "value": "es",
+          "label": {
+            "en": "Spanish",
+            "fr": "Espagnol",
+            "de": "Spanisch",
+            "es": "Español"
+          }
+        }
+      ]
     }
   ],
   "actions": [
     {
-      "key": "test_weather",
-      "label": { "en": "Test the weather provider", "fr": "Tester le fournisseur météo" },
-      "timeout_seconds": 30
-    },
-    {
-      "key": "identify",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ]
-    }
-  ],
-  "scene_triggers": [
-    {
-      "key": "motion_detected",
-      "label": { "en": "Motion detected", "fr": "Mouvement détecté" },
-      "description": {
-        "en": "A demo motion sensor saw a person or an animal move.",
-        "fr": "Un détecteur de démonstration a vu bouger une personne ou un animal."
+      "key": "test_connection",
+      "label": {
+        "en": "Test the connection",
+        "fr": "Tester la connexion",
+        "de": "Verbindung testen",
+        "es": "Probar la conexión"
       },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Sensor", "fr": "Détecteur" }
-        },
-        {
-          "key": "target",
-          "type": "multi_select",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" },
-          "options": [
-            { "value": "person", "label": { "en": "Person", "fr": "Personne" } },
-            { "value": "animal", "label": { "en": "Animal", "fr": "Animal" } }
-          ]
-        }
-      ],
-      "variables": [
-        {
-          "key": "target",
-          "type": "string",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" }
-        }
-      ]
+      "timeout_seconds": 60
     }
   ],
   "scene_actions": [
     {
-      "key": "identify_device",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "description": {
-        "en": "Make a device signal itself (the demo light blinks).",
-        "fr": "Fait se signaler un appareil (la lampe de démonstration clignote)."
+      "key": "show_notification",
+      "label": {
+        "en": "Show on the LaMetric",
+        "fr": "Afficher sur la LaMetric",
+        "de": "Auf der LaMetric anzeigen",
+        "es": "Mostrar en la LaMetric"
       },
-      "timeout_seconds": 15,
+      "description": {
+        "en": "Shows a text on one clock or on all, with an icon, a sound and a priority.",
+        "fr": "Affiche un texte sur une horloge ou sur toutes, avec une icône, un son et une priorité.",
+        "de": "Zeigt einen Text auf einer oder allen Uhren an, mit Symbol, Ton und Priorität.",
+        "es": "Muestra un texto en un reloj o en todos, con un icono, un sonido y una prioridad."
+      },
+      "timeout_seconds": 20,
       "fields": [
         {
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
+          "label": {
+            "en": "LaMetric (empty: all)",
+            "fr": "LaMetric (vide : toutes)",
+            "de": "LaMetric (leer: alle)",
+            "es": "LaMetric (vacío: todas)"
+          },
+          "required": false
+        },
+        {
+          "key": "text",
+          "type": "string",
+          "required": true,
+          "label": {
+            "en": "Text",
+            "fr": "Texte",
+            "de": "Text",
+            "es": "Texto"
+          },
+          "description": {
+            "en": "Scene variables are allowed.",
+            "fr": "Les variables de scène sont permises.",
+            "de": "Szenenvariablen sind erlaubt.",
+            "es": "Se permiten variables de escena."
+          },
+          "placeholder": {
+            "en": "e.g. Dinner is ready",
+            "fr": "ex. À table !",
+            "de": "z. B. Essen ist fertig",
+            "es": "p. ej. La cena está lista"
+          }
+        },
+        {
+          "key": "icon",
+          "type": "string",
+          "required": false,
+          "label": {
+            "en": "Icon",
+            "fr": "Icône",
+            "de": "Symbol",
+            "es": "Icono"
+          },
+          "description": {
+            "en": "Code of an icon of developer.lametric.com/icons: i… still, a… animated.",
+            "fr": "Code d’une icône de developer.lametric.com/icons : i… fixe, a… animée.",
+            "de": "Code eines Symbols von developer.lametric.com/icons: i… fest, a… animiert.",
+            "es": "Código de un icono de developer.lametric.com/icons: i… fijo, a… animado."
+          },
+          "placeholder": {
+            "en": "e.g. a7956",
+            "fr": "ex. a7956",
+            "de": "z. B. a7956",
+            "es": "p. ej. a7956"
+          }
+        },
+        {
+          "key": "sound",
+          "type": "select",
+          "required": false,
+          "default": "none",
+          "label": {
+            "en": "Sound",
+            "fr": "Son",
+            "de": "Ton",
+            "es": "Sonido"
+          },
+          "description": {
+            "en": "Not played on a SKY, which has no speaker.",
+            "fr": "Pas joué sur une SKY, qui n’a pas de haut-parleur.",
+            "de": "Nicht auf einer SKY, die keinen Lautsprecher hat.",
+            "es": "No suena en una SKY, que no tiene altavoz."
+          },
+          "options": [
+            {
+              "value": "none",
+              "label": {
+                "en": "No sound",
+                "fr": "Aucun son",
+                "de": "Kein Ton",
+                "es": "Sin sonido"
+              }
+            },
+            {
+              "value": "bicycle",
+              "label": {
+                "en": "Bicycle",
+                "fr": "Vélo",
+                "de": "Fahrrad",
+                "es": "Bicicleta"
+              }
+            },
+            {
+              "value": "car",
+              "label": {
+                "en": "Car",
+                "fr": "Voiture",
+                "de": "Auto",
+                "es": "Coche"
+              }
+            },
+            {
+              "value": "cash",
+              "label": {
+                "en": "Cash register",
+                "fr": "Caisse enregistreuse",
+                "de": "Kasse",
+                "es": "Caja registradora"
+              }
+            },
+            {
+              "value": "cat",
+              "label": {
+                "en": "Cat",
+                "fr": "Chat",
+                "de": "Katze",
+                "es": "Gato"
+              }
+            },
+            {
+              "value": "dog",
+              "label": {
+                "en": "Dog",
+                "fr": "Chien",
+                "de": "Hund",
+                "es": "Perro"
+              }
+            },
+            {
+              "value": "dog2",
+              "label": {
+                "en": "Dog 2",
+                "fr": "Chien 2",
+                "de": "Hund 2",
+                "es": "Perro 2"
+              }
+            },
+            {
+              "value": "energy",
+              "label": {
+                "en": "Energy",
+                "fr": "Énergie",
+                "de": "Energie",
+                "es": "Energía"
+              }
+            },
+            {
+              "value": "knock-knock",
+              "label": {
+                "en": "Knock knock",
+                "fr": "Toc toc",
+                "de": "Klopf klopf",
+                "es": "Toc toc"
+              }
+            },
+            {
+              "value": "letter_email",
+              "label": {
+                "en": "Letter",
+                "fr": "Courrier",
+                "de": "Brief",
+                "es": "Carta"
+              }
+            },
+            {
+              "value": "lose1",
+              "label": {
+                "en": "Lose 1",
+                "fr": "Défaite 1",
+                "de": "Verloren 1",
+                "es": "Derrota 1"
+              }
+            },
+            {
+              "value": "lose2",
+              "label": {
+                "en": "Lose 2",
+                "fr": "Défaite 2",
+                "de": "Verloren 2",
+                "es": "Derrota 2"
+              }
+            },
+            {
+              "value": "negative1",
+              "label": {
+                "en": "Negative 1",
+                "fr": "Négatif 1",
+                "de": "Negativ 1",
+                "es": "Negativo 1"
+              }
+            },
+            {
+              "value": "negative2",
+              "label": {
+                "en": "Negative 2",
+                "fr": "Négatif 2",
+                "de": "Negativ 2",
+                "es": "Negativo 2"
+              }
+            },
+            {
+              "value": "negative3",
+              "label": {
+                "en": "Negative 3",
+                "fr": "Négatif 3",
+                "de": "Negativ 3",
+                "es": "Negativo 3"
+              }
+            },
+            {
+              "value": "negative4",
+              "label": {
+                "en": "Negative 4",
+                "fr": "Négatif 4",
+                "de": "Negativ 4",
+                "es": "Negativo 4"
+              }
+            },
+            {
+              "value": "negative5",
+              "label": {
+                "en": "Negative 5",
+                "fr": "Négatif 5",
+                "de": "Negativ 5",
+                "es": "Negativo 5"
+              }
+            },
+            {
+              "value": "notification",
+              "label": {
+                "en": "Notification",
+                "fr": "Notification",
+                "de": "Benachrichtigung",
+                "es": "Notificación"
+              }
+            },
+            {
+              "value": "notification2",
+              "label": {
+                "en": "Notification 2",
+                "fr": "Notification 2",
+                "de": "Benachrichtigung 2",
+                "es": "Notificación 2"
+              }
+            },
+            {
+              "value": "notification3",
+              "label": {
+                "en": "Notification 3",
+                "fr": "Notification 3",
+                "de": "Benachrichtigung 3",
+                "es": "Notificación 3"
+              }
+            },
+            {
+              "value": "notification4",
+              "label": {
+                "en": "Notification 4",
+                "fr": "Notification 4",
+                "de": "Benachrichtigung 4",
+                "es": "Notificación 4"
+              }
+            },
+            {
+              "value": "open_door",
+              "label": {
+                "en": "Door opening",
+                "fr": "Porte qui s’ouvre",
+                "de": "Tür öffnet sich",
+                "es": "Puerta que se abre"
+              }
+            },
+            {
+              "value": "positive1",
+              "label": {
+                "en": "Positive 1",
+                "fr": "Positif 1",
+                "de": "Positiv 1",
+                "es": "Positivo 1"
+              }
+            },
+            {
+              "value": "positive2",
+              "label": {
+                "en": "Positive 2",
+                "fr": "Positif 2",
+                "de": "Positiv 2",
+                "es": "Positivo 2"
+              }
+            },
+            {
+              "value": "positive3",
+              "label": {
+                "en": "Positive 3",
+                "fr": "Positif 3",
+                "de": "Positiv 3",
+                "es": "Positivo 3"
+              }
+            },
+            {
+              "value": "positive4",
+              "label": {
+                "en": "Positive 4",
+                "fr": "Positif 4",
+                "de": "Positiv 4",
+                "es": "Positivo 4"
+              }
+            },
+            {
+              "value": "positive5",
+              "label": {
+                "en": "Positive 5",
+                "fr": "Positif 5",
+                "de": "Positiv 5",
+                "es": "Positivo 5"
+              }
+            },
+            {
+              "value": "positive6",
+              "label": {
+                "en": "Positive 6",
+                "fr": "Positif 6",
+                "de": "Positiv 6",
+                "es": "Positivo 6"
+              }
+            },
+            {
+              "value": "statistic",
+              "label": {
+                "en": "Statistic",
+                "fr": "Statistique",
+                "de": "Statistik",
+                "es": "Estadística"
+              }
+            },
+            {
+              "value": "thunder",
+              "label": {
+                "en": "Thunder",
+                "fr": "Tonnerre",
+                "de": "Donner",
+                "es": "Trueno"
+              }
+            },
+            {
+              "value": "water1",
+              "label": {
+                "en": "Water 1",
+                "fr": "Eau 1",
+                "de": "Wasser 1",
+                "es": "Agua 1"
+              }
+            },
+            {
+              "value": "water2",
+              "label": {
+                "en": "Water 2",
+                "fr": "Eau 2",
+                "de": "Wasser 2",
+                "es": "Agua 2"
+              }
+            },
+            {
+              "value": "win",
+              "label": {
+                "en": "Win",
+                "fr": "Victoire",
+                "de": "Gewonnen",
+                "es": "Victoria"
+              }
+            },
+            {
+              "value": "win2",
+              "label": {
+                "en": "Win 2",
+                "fr": "Victoire 2",
+                "de": "Gewonnen 2",
+                "es": "Victoria 2"
+              }
+            },
+            {
+              "value": "wind",
+              "label": {
+                "en": "Wind",
+                "fr": "Vent",
+                "de": "Wind",
+                "es": "Viento"
+              }
+            },
+            {
+              "value": "wind_short",
+              "label": {
+                "en": "Short wind",
+                "fr": "Vent court",
+                "de": "Kurzer Wind",
+                "es": "Viento corto"
+              }
+            },
+            {
+              "value": "alarm1",
+              "label": {
+                "en": "Alarm 1",
+                "fr": "Alarme 1",
+                "de": "Alarm 1",
+                "es": "Alarma 1"
+              }
+            },
+            {
+              "value": "alarm2",
+              "label": {
+                "en": "Alarm 2",
+                "fr": "Alarme 2",
+                "de": "Alarm 2",
+                "es": "Alarma 2"
+              }
+            },
+            {
+              "value": "alarm3",
+              "label": {
+                "en": "Alarm 3",
+                "fr": "Alarme 3",
+                "de": "Alarm 3",
+                "es": "Alarma 3"
+              }
+            },
+            {
+              "value": "alarm4",
+              "label": {
+                "en": "Alarm 4",
+                "fr": "Alarme 4",
+                "de": "Alarm 4",
+                "es": "Alarma 4"
+              }
+            },
+            {
+              "value": "alarm5",
+              "label": {
+                "en": "Alarm 5",
+                "fr": "Alarme 5",
+                "de": "Alarm 5",
+                "es": "Alarma 5"
+              }
+            },
+            {
+              "value": "alarm6",
+              "label": {
+                "en": "Alarm 6",
+                "fr": "Alarme 6",
+                "de": "Alarm 6",
+                "es": "Alarma 6"
+              }
+            },
+            {
+              "value": "alarm7",
+              "label": {
+                "en": "Alarm 7",
+                "fr": "Alarme 7",
+                "de": "Alarm 7",
+                "es": "Alarma 7"
+              }
+            },
+            {
+              "value": "alarm8",
+              "label": {
+                "en": "Alarm 8",
+                "fr": "Alarme 8",
+                "de": "Alarm 8",
+                "es": "Alarma 8"
+              }
+            },
+            {
+              "value": "alarm9",
+              "label": {
+                "en": "Alarm 9",
+                "fr": "Alarme 9",
+                "de": "Alarm 9",
+                "es": "Alarma 9"
+              }
+            },
+            {
+              "value": "alarm10",
+              "label": {
+                "en": "Alarm 10",
+                "fr": "Alarme 10",
+                "de": "Alarm 10",
+                "es": "Alarma 10"
+              }
+            },
+            {
+              "value": "alarm11",
+              "label": {
+                "en": "Alarm 11",
+                "fr": "Alarme 11",
+                "de": "Alarm 11",
+                "es": "Alarma 11"
+              }
+            },
+            {
+              "value": "alarm12",
+              "label": {
+                "en": "Alarm 12",
+                "fr": "Alarme 12",
+                "de": "Alarm 12",
+                "es": "Alarma 12"
+              }
+            },
+            {
+              "value": "alarm13",
+              "label": {
+                "en": "Alarm 13",
+                "fr": "Alarme 13",
+                "de": "Alarm 13",
+                "es": "Alarma 13"
+              }
+            }
+          ]
+        },
+        {
+          "key": "priority",
+          "type": "select",
+          "required": false,
+          "default": "info",
+          "label": {
+            "en": "Priority",
+            "fr": "Priorité",
+            "de": "Priorität",
+            "es": "Prioridad"
+          },
+          "description": {
+            "en": "Critical also shows over the screensaver and at night.",
+            "fr": "Critique s’affiche aussi par-dessus l’économiseur et la nuit.",
+            "de": "Kritisch erscheint auch über dem Bildschirmschoner und nachts.",
+            "es": "Crítica también se muestra sobre el salvapantallas y de noche."
+          },
+          "options": [
+            {
+              "value": "info",
+              "label": {
+                "en": "Information",
+                "fr": "Information",
+                "de": "Information",
+                "es": "Información"
+              }
+            },
+            {
+              "value": "warning",
+              "label": {
+                "en": "Warning",
+                "fr": "Avertissement",
+                "de": "Warnung",
+                "es": "Advertencia"
+              }
+            },
+            {
+              "value": "critical",
+              "label": {
+                "en": "Critical",
+                "fr": "Critique",
+                "de": "Kritisch",
+                "es": "Crítica"
+              }
+            }
+          ]
+        },
+        {
+          "key": "repeat",
+          "type": "number",
+          "required": false,
+          "default": 1,
+          "min": 0,
+          "max": 10,
+          "label": {
+            "en": "Number of times shown",
+            "fr": "Nombre de passages",
+            "de": "Anzahl der Anzeigen",
+            "es": "Número de veces mostrado"
+          },
+          "description": {
+            "en": "0: until a press on the clock's button.",
+            "fr": "0 : jusqu’à un appui sur le bouton de l’horloge.",
+            "de": "0: bis zu einem Druck auf die Taste der Uhr.",
+            "es": "0: hasta pulsar el botón del reloj."
+          }
+        },
+        {
+          "key": "duration",
+          "type": "number",
+          "required": false,
+          "min": 1,
+          "max": 300,
+          "label": {
+            "en": "Duration of each pass (s)",
+            "fr": "Durée de chaque passage (s)",
+            "de": "Dauer jeder Anzeige (s)",
+            "es": "Duración de cada pase (s)"
+          },
+          "description": {
+            "en": "Empty: the clock's default. A long text scrolls anyway.",
+            "fr": "Vide : celle de l’horloge. Un long texte défile quand même.",
+            "de": "Leer: die der Uhr. Ein langer Text läuft trotzdem durch.",
+            "es": "Vacío: la del reloj. Un texto largo se desplaza de todos modos."
+          }
         }
       ],
       "outputs": [
         {
-          "key": "signalled",
-          "type": "boolean",
-          "label": { "en": "Device signalled", "fr": "Appareil signalé" }
+          "key": "count",
+          "type": "number",
+          "label": {
+            "en": "Clocks that showed it",
+            "fr": "Horloges qui l’ont affiché",
+            "de": "Uhren, die ihn angezeigt haben",
+            "es": "Relojes que lo mostraron"
+          }
+        }
+      ]
+    },
+    {
+      "key": "start_timer",
+      "label": {
+        "en": "Start the LaMetric timer",
+        "fr": "Lancer le minuteur de la LaMetric",
+        "de": "Timer der LaMetric starten",
+        "es": "Iniciar el temporizador de la LaMetric"
+      },
+      "description": {
+        "en": "Starts the Timer app of the clock for the chosen duration.",
+        "fr": "Lance l’application Minuteur de l’horloge pour la durée choisie.",
+        "de": "Startet die Timer-App der Uhr für die gewählte Dauer.",
+        "es": "Inicia la aplicación Temporizador del reloj durante el tiempo elegido."
+      },
+      "timeout_seconds": 20,
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "LaMetric (empty: all)",
+            "fr": "LaMetric (vide : toutes)",
+            "de": "LaMetric (leer: alle)",
+            "es": "LaMetric (vacío: todas)"
+          },
+          "required": false
+        },
+        {
+          "key": "minutes",
+          "type": "number",
+          "required": false,
+          "default": 5,
+          "min": 0,
+          "max": 1440,
+          "label": {
+            "en": "Minutes",
+            "fr": "Minutes",
+            "de": "Minuten",
+            "es": "Minutos"
+          }
+        },
+        {
+          "key": "seconds",
+          "type": "number",
+          "required": false,
+          "default": 0,
+          "min": 0,
+          "max": 59,
+          "label": {
+            "en": "Seconds",
+            "fr": "Secondes",
+            "de": "Sekunden",
+            "es": "Segundos"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "key": "count",
+          "type": "number",
+          "label": {
+            "en": "Clocks started",
+            "fr": "Horloges lancées",
+            "de": "Gestartete Uhren",
+            "es": "Relojes iniciados"
+          }
         }
       ]
     }
   ],
   "widgets": [
     {
-      "key": "demo_status",
-      "label": { "en": "Demo status", "fr": "État de la démo" },
-      "description": {
-        "en": "Live temperature and plug power, plug connection and observed location.",
-        "fr": "Température et puissance en direct, connexion de la prise, position observée."
+      "key": "lametric",
+      "label": {
+        "en": "LaMetric",
+        "fr": "LaMetric",
+        "de": "LaMetric",
+        "es": "LaMetric"
       },
-      "icon": "activity",
-      "action_timeout_seconds": 15
+      "description": {
+        "en": "State of a clock, app switching, a message to write, notifications to clear.",
+        "fr": "État d’une horloge, changement d’application, message à écrire, notifications à effacer.",
+        "de": "Zustand einer Uhr, App-Wechsel, Nachricht schreiben, Benachrichtigungen löschen.",
+        "es": "Estado de un reloj, cambio de aplicación, mensaje que escribir, notificaciones que borrar."
+      },
+      "icon": "monitor",
+      "action_timeout_seconds": 20,
+      "settings": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "LaMetric (empty: the first one)",
+            "fr": "LaMetric (vide : la première)",
+            "de": "LaMetric (leer: die erste)",
+            "es": "LaMetric (vacío: la primera)"
+          },
+          "required": false
+        }
+      ]
     }
   ]
 }

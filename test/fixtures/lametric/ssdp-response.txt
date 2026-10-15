@@ -1,0 +1,8 @@
+HTTP/1.1 200 OK
+CACHE-CONTROL: max-age=1800
+EXT:
+LOCATION: http://192.0.2.10:44057/465d585b-1c05-444a-b14e-6ffb875b46a6/device_description.xml
+SERVER: Linux/3.4.103 UPnP/1.0 LaMetric/2.3.9
+ST: urn:schemas-upnp-org:device:LaMetric:1
+USN: uuid:465d585b-1c05-444a-b14e-6ffb875b46a6::urn:schemas-upnp-org:device:LaMetric:1
+

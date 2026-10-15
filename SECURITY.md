@@ -30,6 +30,24 @@ Gladys before reporting a problem.
 
 In scope: the code of this repository and the Docker image it publishes.
 
+What the integration handles:
+
+- **Secrets**: the API key of each clock is a `secret` field of the Gladys
+  configuration. The integration reads it from Gladys at startup, keeps it in
+  memory, sends it only to the clock of its slot (HTTP Basic authentication,
+  over HTTPS), and never writes it to `/data` nor to the logs. A slot without
+  address tries its key on the LaMetric clocks found by the network search
+  (SSDP), to find which one is its clock.
+- **Stored in `/data`**: nothing.
+- **Network**: requests go only to the clocks of the local network, on
+  HTTPS port 4343, and to the UPnP description (HTTP) a clock announces
+  during a network search. The certificate of the clocks is self-signed: it
+  is accepted without verification for those requests, as every LaMetric
+  client does; a device of the local network able to impersonate a clock
+  could read its API key. The integration opens no port and calls no cloud
+  service.
+
 Out of scope: Gladys Assistant itself (see its
 [security policy](https://github.com/GladysAssistant/Gladys/security/policy)),
-and the third-party services and devices the integration talks to.
+the LaMetric clocks and services, and the other devices and services of your
+network.

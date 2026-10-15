@@ -1,33 +1,64 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeConfig, DEFAULT_CONFIG } from '../src/config.js';
+import { DEFAULT_CONFIG, formatAddress, normalizeConfig, parseAddress } from '../src/config.js';
 
-test('normalizeConfig returns the defaults when called with no argument', () => {
-  assert.deepEqual(normalizeConfig(), DEFAULT_CONFIG);
+test('an address: an IP, a name, a port, or the URL copied from a browser', () => {
+  assert.deepEqual(parseAddress('192.0.2.10'), { host: '192.0.2.10', port: 4343 });
+  assert.deepEqual(parseAddress(' lametric.local '), { host: 'lametric.local', port: 4343 });
+  assert.deepEqual(parseAddress('192.0.2.10:4344'), { host: '192.0.2.10', port: 4344 });
+  assert.deepEqual(parseAddress('https://192.0.2.10:4343/api/v2'), {
+    host: '192.0.2.10',
+    port: 4343,
+  });
+  // The HTTP port of the clock (8080) is not the API: HTTPS 4343 instead.
+  assert.deepEqual(parseAddress('http://192.0.2.10:8080'), { host: '192.0.2.10', port: 4343 });
+  assert.deepEqual(parseAddress('[2001:db8::1]'), { host: '2001:db8::1', port: 4343 });
+  assert.equal(formatAddress({ host: '2001:db8::1', port: 4343 }), '[2001:db8::1]');
 });
 
-test('normalizeConfig keeps user values over the defaults', () => {
-  const config = normalizeConfig({ latitude: 45.5, longitude: -73.6, unit: 'fahrenheit' });
-  assert.equal(config.latitude, 45.5);
-  assert.equal(config.longitude, -73.6);
-  assert.equal(config.unit, 'fahrenheit');
+test('an unusable address is refused, credentials included', () => {
+  for (const raw of ['', '  ', 'ftp://192.0.2.10', 'https://dev:key@192.0.2.10', 'http://', 42]) {
+    assert.equal(parseAddress(raw), null, String(raw));
+  }
 });
 
-test('normalizeConfig coerces numeric strings coming from a form', () => {
-  const config = normalizeConfig({ latitude: '48.8', longitude: '2.3', poll_frequency: '600' });
-  assert.equal(config.latitude, 48.8);
-  assert.equal(config.longitude, 2.3);
-  assert.equal(config.poll_frequency, 600);
-  assert.equal(typeof config.poll_frequency, 'number');
+test('the address shown to the user', () => {
+  assert.equal(formatAddress({ host: '192.0.2.10', port: 4343 }), '192.0.2.10');
+  assert.equal(formatAddress({ host: '192.0.2.10', port: 4344 }), '192.0.2.10:4344');
 });
 
-test('normalizeConfig falls back to the default for a missing numeric field', () => {
-  const config = normalizeConfig({ unit: 'celsius' });
-  assert.equal(config.poll_frequency, DEFAULT_CONFIG.poll_frequency);
+test('the defaults', () => {
+  assert.deepEqual(normalizeConfig(), {
+    clocks: [],
+    invalidSlots: [],
+    pollIntervalMs: 30_000,
+    language: 'fr',
+  });
+  assert.deepEqual(normalizeConfig(null), normalizeConfig({}));
+  assert.equal(DEFAULT_CONFIG.poll_interval, '30');
 });
 
-test('GLADYS_PREFER_LOCAL defaults to true and only an explicit false disables it', () => {
-  assert.equal(normalizeConfig().GLADYS_PREFER_LOCAL, true);
-  assert.equal(normalizeConfig({ GLADYS_PREFER_LOCAL: true }).GLADYS_PREFER_LOCAL, true);
-  assert.equal(normalizeConfig({ GLADYS_PREFER_LOCAL: false }).GLADYS_PREFER_LOCAL, false);
+test('three slots: a key without address, an address without key, an invalid address', () => {
+  const config = normalizeConfig({
+    clock_1_address: '',
+    clock_1_api_key: '  abc  ',
+    clock_2_address: '192.0.2.11',
+    clock_3_address: 'ftp://nope',
+    clock_3_api_key: 'def',
+    poll_interval: 60,
+    language: 'de',
+  });
+  assert.deepEqual(config.clocks, [
+    { slot: 1, address: null, apiKey: 'abc' },
+    { slot: 2, address: { host: '192.0.2.11', port: 4343 }, apiKey: '' },
+  ]);
+  assert.deepEqual(config.invalidSlots, [3]);
+  assert.equal(config.pollIntervalMs, 60_000);
+  assert.equal(config.language, 'de');
+});
+
+test('an interval or a language outside the lists falls back to the default', () => {
+  const config = normalizeConfig({ poll_interval: '7', language: 'it' });
+  assert.equal(config.pollIntervalMs, 30_000);
+  assert.equal(config.language, 'fr');
 });
