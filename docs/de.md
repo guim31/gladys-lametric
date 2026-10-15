@@ -1,0 +1,188 @@
+# LaMetric
+
+Diese Integration verbindet die smarten Uhren **LaMetric TIME** und
+**LaMetric SKY** mit Gladys, über dein lokales Netzwerk, mit der lokalen API
+der Uhren (API v2). Keine Cloud, kein LaMetric-Konto in Gladys: nur der
+API-Schlüssel jeder Uhr.
+
+- Deine Szenen schreiben auf die Uhren: einen Text, mit Symbol, Ton und
+  Priorität.
+- Helligkeit, Lautstärke, Bildschirm und Bluetooth sind Gladys-Funktionen,
+  die du auf einem Dashboard zeigen und aus Szenen steuern kannst.
+- Druckknöpfe wechseln die App, löschen die Benachrichtigungen und steuern
+  Stoppuhr, Timer und Radio.
+- Ein Dashboard-Widget schreibt mit zwei Tippern eine Nachricht auf die Uhr.
+
+> **Ohne die Hardware entwickelt: Rückmeldungen willkommen.** Die Integration
+> wurde mit Antworten echter Uhren gebaut und getestet, die die Bibliothek
+> python-demetriek und Home Assistant veröffentlicht haben, nicht mit einer
+> Uhr. Sag uns in den [Issues](https://github.com/guim31/gladys-lametric/issues),
+> was funktioniert und was nicht.
+
+Diese Integration steht in keiner Verbindung zu LaMetric. LaMetric, LaMetric
+TIME und LaMetric SKY sind Marken ihres Inhabers.
+
+## Was du brauchst
+
+- Gladys Assistant **5.2.0** oder neuer.
+- Eine **LaMetric TIME** oder **LaMetric SKY** im selben lokalen Netzwerk wie
+  Gladys (bis zu drei Uhren).
+- Den **API-Schlüssel** jeder Uhr: Melde dich auf
+  [developer.lametric.com](https://developer.lametric.com) mit dem Konto der
+  LaMetric-App an, öffne **Devices** und kopiere den API-Schlüssel der Uhr.
+  Jede Uhr hat ihren eigenen Schlüssel.
+
+## Einrichtung
+
+1. Öffne in Gladys **Integrationen** → **Von GitHub installieren** und gib
+   `https://github.com/guim31/gladys-lametric` ein (oder installiere
+   **LaMetric** aus dem Katalog).
+2. Füge in **Konfiguration** den **API-Schlüssel** der ersten Uhr ein. Die
+   **Adresse** der Uhr (eine IP-Adresse wie `192.168.1.20`) ist optional: Leer sucht
+   Gladys die Uhr im Netzwerk. Darunter bis zu zwei weitere Uhren.
+3. Wähle das **Aktualisierungsintervall** (standardmäßig 30 Sekunden) und die
+   **Sprache der Funktionsnamen** und speichere.
+4. Klicke auf **Verbindung testen**: Jede Uhr meldet OK, mit Modell und
+   Firmware, oder sagt, was nicht stimmt.
+5. Öffne den Tab **Entdecken** und füge die Uhren hinzu.
+
+### Adressen und Netzwerksuche
+
+Die Uhren kündigen sich im Netzwerk an (SSDP). Gladys führt diese Suche für
+die Integration aus, die in ihrem eigenen Container läuft. Die Integration findet die
+Adresse einer Uhr ohne Adresse (es ist die Uhr, die den API-Schlüssel
+akzeptiert) und folgt einer Uhr, deren Adresse sich geändert hat (eine neue
+IP vom Router), über ihre Seriennummer. Die Suche läuft, wenn eine Uhr sie
+braucht, höchstens alle 5 Minuten, und sofort über **Scannen** im Tab
+Entdecken oder den Knopf **Verbindung testen**, der auch die gefundenen, aber
+noch nicht konfigurierten Uhren auflistet.
+
+Eine Uhr, die sich nicht ankündigt, wird unter der eingegebenen Adresse
+erreicht. Gib deinen Uhren wenn möglich eine feste IP-Adresse im Router.
+
+## Das Gerät jeder Uhr
+
+Ein Gerät pro Uhr, mit dem Namen der Uhr. Jede Funktion erscheint nur, wenn
+die Uhr sie hat:
+
+| Funktion                                                   | Was sie macht                                                                                                                  |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Helligkeit                                                 | Schieberegler 0-100; ihn zu setzen schaltet die automatische Helligkeit aus. Am USB-Port eines Computers endet die Uhr bei 76. |
+| Automatische Helligkeit                                    | an: Die Uhr folgt dem Licht im Raum                                                                                            |
+| Bildschirm                                                 | schaltet die Anzeige ein oder aus (ab Firmware 3)                                                                              |
+| Bildschirmschoner                                          | schaltet den Bildschirmschoner der LaMetric-App ein oder aus (TIME)                                                            |
+| Lautstärke                                                 | Schieberegler 0-100 (TIME: Die SKY hat keinen Lautsprecher)                                                                    |
+| Bluetooth                                                  | schaltet Bluetooth ein oder aus (TIME)                                                                                         |
+| WLAN-Signal                                                | das WLAN-Signal, in Prozent                                                                                                    |
+| Angezeigte App                                             | der Name der App auf dem Bildschirm                                                                                            |
+| Nächste App, Vorherige App                                 | Druckknöpfe: wechseln die angezeigte App                                                                                       |
+| Benachrichtigungen löschen                                 | Druckknopf: entfernt die angezeigten und wartenden Benachrichtigungen                                                          |
+| Stoppuhr starten, Stoppuhr anhalten, Stoppuhr zurücksetzen | Druckknöpfe, wenn die App Stoppuhr installiert ist                                                                             |
+| Timer starten, Timer anhalten, Timer zurücksetzen          | Druckknöpfe, wenn die App Timer installiert ist (die in der App eingestellte Dauer)                                            |
+| Radio abspielen, Radio stoppen, Nächster Radiosender       | Druckknöpfe, wenn die App Radio installiert ist                                                                                |
+
+„Anhalten“ pausiert: „Starten“ macht dort weiter, „Zurücksetzen“ geht auf
+null zurück.
+
+Die Uhren werden in jedem Aktualisierungsintervall von der Integration selbst
+gelesen: Die Werte ändern sich in Gladys nur, wenn sie sich auf der Uhr
+ändern, und werden sonst alle 6 Stunden erneut gesendet. Ein Befehl wird
+sofort zurückgelesen. Die Namen der Funktionen werden beim Anlegen des Geräts
+vergeben; ein späterer Sprachwechsel benennt sie nicht um.
+
+## Dashboard-Widget
+
+Füge das Widget **LaMetric** zu einem Dashboard hinzu. Es zeigt Helligkeit,
+Lautstärke und WLAN-Signal einer Uhr, ihren Zustand, die angezeigte App und
+ihre Firmware (und das Update, das die Uhr anbietet, falls vorhanden), mit
+vier Knöpfen:
+
+- **Zurück** und **Weiter**: wechseln die angezeigte App;
+- **Nachricht…**: öffnet ein Formular mit dem Text, einem optionalen
+  Symbolcode und einem Ton und zeigt ihn auf der Uhr an;
+- **Löschen**: entfernt die Benachrichtigungen.
+
+Wähle in den Widget-Einstellungen die Uhr; leer zeigt das Widget die erste
+Uhr der Konfiguration.
+
+## Szenen
+
+Die Integration fügt dem Szenen-Editor zwei Aktionen hinzu, in der Kategorie
+**Integrationen**. Beide wirken auf die gewählte Uhr oder, wenn das Feld
+LaMetric leer ist, auf alle Uhren, die antworten, und geben die Zahl der
+Uhren zurück, die es ausgeführt haben (`count`).
+
+### Auf der LaMetric anzeigen
+
+Zeigt einen Text an. Der Text darf Szenenvariablen enthalten (eine
+Temperatur, einen Namen…).
+
+- **Symbol**: der Code eines Symbols der
+  [LaMetric-Galerie](https://developer.lametric.com/icons), `i` und die Nummer
+  für ein festes Symbol (`i2867`), `a` für ein animiertes (`a7956`). Ein
+  unbekannter Code wird weggelassen: Der Text erscheint trotzdem.
+- **Ton**: einer der Benachrichtigungstöne oder Alarme der Uhr. Eine SKY hat
+  keinen Lautsprecher: Der Text erscheint ohne Ton.
+- **Priorität**: Information, Warnung oder Kritisch. Kritisch erscheint auch
+  über dem Bildschirmschoner und nachts.
+- **Anzahl der Anzeigen**: standardmäßig 1; 0 lässt ihn auf dem Bildschirm,
+  bis jemand die Taste der Uhr drückt.
+- **Dauer jeder Anzeige (s)**: leer für die Dauer der Uhr. Ein Text, der
+  länger als der Bildschirm ist, läuft trotzdem durch.
+
+### Timer der LaMetric starten
+
+Startet die App Timer der Uhr für die gewählten Minuten und Sekunden. Die App
+muss auf der Uhr installiert sein (standardmäßig ist sie es).
+
+### Szenen-Ideen
+
+- **Die Waschmaschine ist fertig**: Wenn die Leistung ihrer Steckdose unter
+  5 W fällt, **Auf der LaMetric anzeigen** „Wäsche fertig“, Symbol `a7956`,
+  Ton „Positiv 1“.
+- **Es klingelt**: Wenn die Türklingel läutet, „Tür“ mit dem Ton
+  „Klopf klopf“ anzeigen, Priorität Kritisch, auf allen Uhren.
+- **Teezeit**: über einen Knopf im Dashboard oder einen Sprachbefehl den
+  **Timer der LaMetric starten**, für 4 Minuten.
+- **Nacht**: um 23 Uhr die **Helligkeit** auf 5 setzen oder den
+  **Bildschirm** ausschalten; um 7 Uhr die **Automatische Helligkeit** wieder
+  einschalten.
+
+## Fehlerbehebung
+
+- **„API-Schlüssel abgelehnt“**: Kopiere den Schlüssel erneut von
+  developer.lametric.com → Devices; er gehört nur zu einer Uhr. Eine auf
+  Werkseinstellungen zurückgesetzte Uhr bekommt einen neuen Schlüssel.
+- **„nicht im Netzwerk gefunden: Gib ihre Adresse ein“**: Die Uhr antwortet
+  nicht auf die Netzwerksuche (oder Gladys kann nicht suchen): Gib ihre
+  IP-Adresse ein, die in der LaMetric-App steht (Einstellungen der Uhr →
+  WLAN).
+- **„antwortet nicht“**: Prüfe, dass die Uhr an ist, im selben Netzwerk wie
+  Gladys, und dass nichts den TCP-Port **4343** zwischen beiden blockiert.
+- **„diese Adresse ist keine LaMetric“**: Ein anderes Gerät antwortet unter
+  dieser Adresse.
+- **Ein Befehl schlägt direkt nach einem Firmware-Update fehl**: Klicke auf
+  **Verbindung testen** und dann auf **Scannen** im Tab Entdecken: Eine neue
+  Funktion (der Schalter Bildschirm ab Firmware 3) lässt Gladys anbieten, das
+  Gerät zu aktualisieren.
+- Die Integration protokolliert nur das Wesentliche (Start, Verbindung,
+  Verlust und Rückkehr einer Uhr, Aktionen des Nutzers). Für jede Lesung setze
+  `LOG_LEVEL=debug` in den Einstellungen der Integration. Die Protokolle
+  zeigen nie einen API-Schlüssel.
+
+## Grenzen
+
+- Nur lokales Netzwerk. Die Cloud-Funktionen von LaMetric (Apps aus dem
+  Store, Konto) werden nicht genutzt.
+- Bis zu drei Uhren.
+- Die Geräte-API meldet keinen Akkustand: Es gibt keine Akku-Funktion.
+- Stoppuhr, Timer und Radio melden der Integration ihren Zustand nicht: Es
+  sind Druckknöpfe, ohne Zustand in Gladys.
+- Die Integration legt keine App auf der Uhr an (keine „My Data DIY“-Frames):
+  Es werden nur Benachrichtigungen angezeigt.
+- Die Uhren verwenden ein selbstsigniertes HTTPS-Zertifikat: Die Integration
+  akzeptiert es für ihre Adresse. Halte die Uhren in einem Netzwerk, dem du
+  vertraust.
+- Die lokale API von LaMetric hat kein dokumentiertes Anfragelimit; die
+  Integration liest jede Uhr zweimal pro Aktualisierungsintervall (ihren
+  Zustand und ihre Apps) und schreibt nur auf deine Befehle.

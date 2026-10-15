@@ -16,12 +16,13 @@ its only runtime dependency. It started from the official JavaScript template.
 ```bash
 npm install
 npm test                                  # node --test, the built-in runner
-node --test test/devices.test.js          # one file
-node --test --test-name-pattern "plug"    # tests whose name matches
+node --test test/hub.test.js              # one file
+node --test --test-name-pattern "SKY"     # tests whose name matches
 npm run lint                              # ESLint
 npm run format:check                      # Prettier, as the CI runs it
 npm run format                            # Prettier, fix in place
-npx github:GladysAssistant/integration-store .   # store admission checks
+npx github:GladysAssistant/integration-store --skip-image-check .   # store admission checks
+LAMETRIC_API_KEY=<key> node scripts/probe.mjs <ip>                # read-only probe of a real clock
 ```
 
 The CI (`.github/workflows/ci.yml`) runs `format:check`, `lint` and `test` on
@@ -31,16 +32,25 @@ pushing.
 ## Architecture
 
 ```
-index.js                          SDK wiring only: handlers registered before connect()
-src/devices/index.js              registry of the device blueprints + dispatch helpers
-src/devices/<type>.js             one device type per file (buildDevice, onPoll, onSetValue...)
-src/scenes.js                     scene action handlers (manifest `scene_actions`)
-src/widgets.js                    dashboard widget handlers (manifest `widgets`)
+index.js                          SDK wiring only: registerHandlers, shutdown
+src/app.js                        every SDK handler, registered before connect()
+src/hub.js                        the clocks: reading timer, states, commands, notifications, status
+src/devices.js                    one device per clock: features, names (4 languages), states
+src/lametric/client.js            device API v2 client (HTTPS 4343, Basic dev:<key>), error kinds
+src/lametric/http.js              node:https request, self-signed certificate accepted per request
+src/lametric/model.js             parsing of the answers, notification body, sounds
+src/discovery.js                  SSDP answers relayed by the core, UPnP description
+src/scenes.js                     scene actions show_notification, start_timer
+src/widgets.js                    dashboard widget `lametric`
+src/sounds.js                     sound options (manifest + widget form)
+src/texts.js                      messages in the four languages
+src/issues.js                     a repeated failure logged once, its end once
 src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
-src/weather.js                    example driver (Open-Meteo)
-gladys-assistant-integration.json manifest: name, config_schema, actions, image...
-docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)
-test/                             node --test, against the SDK's fake Gladys (integration-sdk/testing)
+scripts/probe.mjs                 read-only probe of a real clock (GET + one SSDP search)
+gladys-assistant-integration.json manifest: name, config_schema, actions, scene actions, widget
+docs/{en,fr,de,es}.md             user documentation, re-hosted by Gladys, same sections
+test/                             node --test, against the SDK's fake Gladys and fake clocks
+test/fixtures/lametric/           answers of real clocks (demetriek, Home Assistant), anonymized
 .github/scripts/release.mjs       release helpers (manifest bump, changelog), tested in test/
 ```
 
@@ -70,10 +80,54 @@ test/                             node --test, against the SDK's fake Gladys (in
   `type: "provider"`: 5.1.0). `test/manifest.test.js` ties the manifest to the
   code (defaults, action, scene and widget handlers): change both sides
   together.
-- **User-facing text** is bilingual (English and French): action messages,
-  manifest texts, and `docs/en.md` / `docs/fr.md`, kept in sync.
+- **User-facing text** exists in English, French, German ("du") and Spanish
+  ("usted"): action messages, manifest texts, feature names, widget texts,
+  and `docs/en.md`, `docs/fr.md`, `docs/de.md`, `docs/es.md` with the same
+  sections. `test/i18n.test.js` fails on a missing language.
 - **Style.** Prettier formats, ESLint catches mistakes. Comments explain why,
   in English. Tests never touch the network.
+
+## LaMetric
+
+- **API**: `https://<ip>:4343/api/v2/...`, Basic authentication `dev:<API key>`,
+  self-signed certificate (accepted per request in `src/lametric/http.js`,
+  never globally). The key comes from developer.lametric.com → Devices, one per
+  clock. Reference client: frenck/python-demetriek (MIT); Home Assistant
+  `lametric` (Apache-2.0) for the features. Their fixtures, anonymized, are in
+  `test/fixtures/lametric/` (provenance in its README).
+- **Models**: `model` is a hardware id: `LM 37X8` (TIME, firmware 2), `sa8`
+  (TIME, firmware 3), `sa5` (SKY). Firmware 2 has no `display.on` and no
+  `audio.available`; the SKY has no audio (it refuses a notification with a
+  sound: leave the sound out), no Bluetooth, and its screensaver is ignored
+  (as in Home Assistant). Wi-Fi is `strength`/`essid` on the device endpoint,
+  `rssi`/`ssid` on newer firmwares (`device-computer-powered.json`).
+- **Brightness**: the features keep fixed 0-100 bounds; the clock reports a
+  `brightness_limit` that moves with the power supply (max 76 on a computer's
+  USB port), so a write is clamped into it rather than the bounds changed
+  (a structure change would ask the user to update the device).
+- **Apps**: an app action needs the widget id of the app
+  (`GET /api/v2/device/apps`: `1_com.lametric.clock` on firmware 3, a hash on
+  firmware 2). The app commands are push buttons published only when the app
+  and its actions are installed; installing an app changes the structure.
+  `activate: true` shows the app while it runs the action. The stopwatch,
+  timer and radio states are never polled: `radio.state` is an action, and
+  polling it could switch the screen to the radio.
+- **Notifications**: `lifetime` (not `lifeTime`) is the time in the queue,
+  not on screen; `cycles: 0` stays until the button is pressed; the frame
+  `duration` is in milliseconds. No write is retried (double notification).
+- **Identity**: the serial number (`serial_number`), lower-cased, never the
+  slot nor the address. The SSDP description gives the serial number too, so
+  a known clock is followed when its address changes.
+- **SSDP**: search target `urn:schemas-upnp-org:device:LaMetric:1`, the
+  description on HTTP port 44057 of the clock (from the Home Assistant tests;
+  the rest of `device-description.xml` is reconstructed: check with
+  `scripts/probe.mjs --ssdp`).
+- **Tests**: `test/helpers/selfSignedCert.js` builds a throw-away X.509
+  certificate with node:crypto only: no private key in the repository.
+  `t.mock.timers` must mock `Date` too for the heartbeat of
+  `publishChangedStates`, which dates the states with `Date.now`.
+- `DEVICE_FEATURE_TYPES.SIGNAL` has no `INTEGER` key in the SDK: the
+  `signal/integer` couple is `TYPES.SIGNAL.QUALITY`.
 
 ---
 

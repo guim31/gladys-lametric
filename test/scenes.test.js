@@ -1,93 +1,123 @@
+// -----------------------------------------------------------------------------
+// The scene actions, as a scene runs them (the SDK's fake Gladys relays the
+// resolved fields): "Show on the LaMetric" and "Start the LaMetric timer".
+// -----------------------------------------------------------------------------
+
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
-import { createFakeGladys } from '@gladysassistant/integration-sdk/testing';
-import { DEVICE_BLUEPRINTS } from '../src/devices/index.js';
-import { MOTION_DETECTED_TRIGGER, motionSensor } from '../src/devices/motionSensor.js';
-import { SCENE_ACTIONS } from '../src/scenes.js';
-import { normalizeConfig } from '../src/config.js';
+import { formatDuration } from '../src/hub.js';
+import { API_KEY, FakeLaMetric, IP_1, IP_2, createWorld, ids } from './helpers/world.js';
 
-const manifest = JSON.parse(
-  await readFile(new URL('../gladys-assistant-integration.json', import.meta.url), 'utf8'),
-);
-const config = normalizeConfig();
-
-const declarationOf = (list, key) => manifest[list].find((entry) => entry.key === key);
-const keysOf = (list) => (list ?? []).map((entry) => entry.key);
-const deviceIdOf = (gladys, key) =>
-  DEVICE_BLUEPRINTS.find((bp) => bp.key === key).deviceExternalId(gladys);
-
-// Let the async interval callback run to completion.
-const flush = () => new Promise((resolve) => setImmediate(resolve));
-
-test('the motion sensor fires one motion_detected event per detection, none on the clear', async (t) => {
-  t.mock.timers.enable({ apis: ['setInterval', 'setTimeout'] });
-  const gladys = createFakeGladys();
-  const stopPush = motionSensor.startPush(gladys, config);
-  try {
-    t.mock.timers.tick(60_000);
-    await flush();
-    assert.equal(gladys.fake.sceneEvents.length, 1, 'one detection, one event');
-    assert.equal(gladys.fake.sceneEvents[0].key, MOTION_DETECTED_TRIGGER);
-    assert.equal(gladys.fake.states.at(-1).state, 1, 'the state is still published');
-
-    t.mock.timers.tick(10_000);
-    await flush();
-    assert.equal(gladys.fake.states.at(-1).state, 0, 'the detection is cleared');
-    assert.equal(gladys.fake.sceneEvents.length, 1, 'the clear fires no event');
-  } finally {
-    stopPush();
-  }
+const twoClocks = () => ({
+  [IP_1]: new FakeLaMetric(),
+  [IP_2]: new FakeLaMetric({ device: 'device-sky', serial: 'SA0000000000TEST003', apps: null }),
+});
+const twoClocksConfig = (language = 'en') => ({
+  clock_1_address: IP_1,
+  clock_1_api_key: API_KEY,
+  clock_2_address: IP_2,
+  clock_2_api_key: API_KEY,
+  language,
 });
 
-test('motion_detected data only carries keys the trigger declares', async (t) => {
-  t.mock.timers.enable({ apis: ['setInterval', 'setTimeout'] });
-  const gladys = createFakeGladys();
-  const stopPush = motionSensor.startPush(gladys, config);
-  try {
-    t.mock.timers.tick(60_000);
-    await flush();
-  } finally {
-    stopPush();
-  }
-  const [{ data }] = gladys.fake.sceneEvents;
-  const trigger = declarationOf('scene_triggers', MOTION_DETECTED_TRIGGER);
-  // The core keeps the `fields` keys (filters) and the `variables` keys
-  // (exposed to the scene): any other key would be silently dropped.
-  const declared = [...keysOf(trigger.fields), ...keysOf(trigger.variables)];
-  for (const [key, value] of Object.entries(data)) {
-    assert.ok(declared.includes(key), `data.${key} is not declared, the core would drop it`);
-    assert.ok(value === null || typeof value !== 'object', `data.${key} must be a primitive`);
-  }
-  // A `"source": "devices"` filter stores a device external_id.
-  assert.equal(data.device, deviceIdOf(gladys, 'motion-sensor'));
-  const targets = trigger.fields.find((field) => field.key === 'target').options;
-  assert.ok(
-    targets.some((option) => option.value === data.target),
-    `data.target "${data.target}" must be one of the filter options`,
-  );
-});
-
-test('identify_device signals the chosen device and returns the declared outputs', async () => {
-  const gladys = createFakeGladys();
-  const outputs = await SCENE_ACTIONS.identify_device(gladys, {
-    fields: { device: deviceIdOf(gladys, 'light') },
-    config,
+test('show a text with every option on the chosen clock', async () => {
+  const w = await createWorld({ clocks: twoClocks(), config: twoClocksConfig() });
+  const answer = await w.fake.sceneAction('show_notification', {
+    device: ids(w.gladys).device,
+    text: 'Washing machine done',
+    icon: 'a7956',
+    sound: 'positive2',
+    priority: 'warning',
+    repeat: 3,
+    duration: 10,
   });
-  assert.deepEqual(outputs, { signalled: true });
-  const declared = keysOf(declarationOf('scene_actions', 'identify_device').outputs);
-  for (const key of Object.keys(outputs)) {
-    assert.ok(declared.includes(key), `output "${key}" is not declared, the core would drop it`);
-  }
+  assert.deepEqual(answer, { success: true, data: { outputs: { count: 1 } } });
+  assert.deepEqual(w.network.clocks[IP_1].notifications, [
+    {
+      id: '1',
+      priority: 'warning',
+      icon_type: 'none',
+      model: {
+        frames: [{ text: 'Washing machine done', icon: 'a7956', duration: 10_000 }],
+        cycles: 3,
+        sound: { category: 'notifications', id: 'positive2', repeat: 1 },
+      },
+    },
+  ]);
+  assert.equal(w.network.clocks[IP_2].notifications.length, 0);
 });
 
-test('identify_device reports a device that cannot signal itself through its output', async () => {
-  // Not a failure: a scene action is never a condition, the scene author
-  // gates the following actions on the output instead.
-  const gladys = createFakeGladys();
-  const outputs = await SCENE_ACTIONS.identify_device(gladys, {
-    fields: { device: deviceIdOf(gladys, 'weather-station') },
-    config,
+test('no device chosen: every clock that answers; the SKY gets it without sound', async () => {
+  const w = await createWorld({ clocks: twoClocks(), config: twoClocksConfig() });
+  const answer = await w.fake.sceneAction('show_notification', {
+    text: 'Door open',
+    sound: 'open_door',
   });
-  assert.deepEqual(outputs, { signalled: false });
+  assert.deepEqual(answer.data.outputs, { count: 2 });
+  assert.equal(w.network.clocks[IP_1].notifications[0].model.sound.id, 'open_door');
+  assert.equal(w.network.clocks[IP_2].notifications[0].model.sound, undefined);
+});
+
+test('one clock of two down: the other shows it, the count says one', async () => {
+  const w = await createWorld({ clocks: twoClocks(), config: twoClocksConfig() });
+  w.network.clocks[IP_2].online = false;
+  const answer = await w.fake.sceneAction('show_notification', { text: 'Hi' });
+  assert.deepEqual(answer.data.outputs, { count: 1 });
+});
+
+test('the action fails, in the language of the configuration, when nothing can show it', async () => {
+  const w = await createWorld({ clocks: twoClocks(), config: twoClocksConfig('fr') });
+  assert.deepEqual(await w.fake.sceneAction('show_notification', { text: '   ' }), {
+    success: false,
+    error: 'Le texte à afficher est vide.',
+  });
+  w.network.clocks[IP_1].online = false;
+  const failed = await w.fake.sceneAction('show_notification', {
+    device: ids(w.gladys).device,
+    text: 'Hi',
+  });
+  assert.deepEqual(failed, {
+    success: false,
+    error: 'LaMetric 1 (Living room) : ne répond pas.',
+  });
+  const unknown = await w.fake.sceneAction('show_notification', {
+    device: 'ext:test-integration:lametric:gone',
+    text: 'Hi',
+  });
+  assert.equal(unknown.error, 'Cette LaMetric n’est plus dans la configuration de l’intégration.');
+});
+
+test('start the timer for minutes and seconds', async () => {
+  const w = await createWorld();
+  const answer = await w.fake.sceneAction('start_timer', { minutes: 10, seconds: 30 });
+  assert.deepEqual(answer, { success: true, data: { outputs: { count: 1 } } });
+  assert.deepEqual(w.network.clocks[IP_1].actions, [
+    {
+      package: 'com.lametric.countdown',
+      widgetId: '6_com.lametric.countdown',
+      id: 'countdown.configure',
+      params: { duration: 630, start_now: true },
+      activate: true,
+    },
+  ]);
+  await w.fake.sceneAction('start_timer', { minutes: 0, seconds: 0 });
+  assert.equal(w.network.clocks[IP_1].actions[1].params.duration, 1, 'one second at least');
+});
+
+test('the timer on a clock without the Timer app fails with its name', async () => {
+  const w = await createWorld({
+    clocks: { [IP_1]: new FakeLaMetric({ apps: null }) },
+    config: { clock_1_address: IP_1, clock_1_api_key: API_KEY, language: 'de' },
+  });
+  const answer = await w.fake.sceneAction('start_timer', { minutes: 1 });
+  assert.deepEqual(answer, {
+    success: false,
+    error: 'Die App Timer ist auf LaMetric 1 (Living room) nicht installiert.',
+  });
+});
+
+test('durations read the same in the four languages', () => {
+  assert.equal(formatDuration(45), '45 s');
+  assert.equal(formatDuration(300), '5 min');
+  assert.equal(formatDuration(90), '1 min 30 s');
 });

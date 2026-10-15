@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<root xmlns="urn:schemas-upnp-org:device-1-0">
+  <specVersion>
+    <major>1</major>
+    <minor>0</minor>
+  </specVersion>
+  <device>
+    <deviceType>urn:schemas-upnp-org:device:LaMetric:1</deviceType>
+    <friendlyName>LaMetric Time (LM0001)</friendlyName>
+    <manufacturer>LaMetric Inc.</manufacturer>
+    <manufacturerURL>https://lametric.com</manufacturerURL>
+    <modelDescription>LaMetric Time</modelDescription>
+    <modelName>LaMetric Time</modelName>
+    <serialNumber>SA0000000000TEST001</serialNumber>
+    <UDN>uuid:465d585b-1c05-444a-b14e-6ffb875b46a6</UDN>
+  </device>
+</root>
