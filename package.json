@@ -1,6 +1,6 @@
 {
   "name": "gladys-lametric",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "LaMetric TIME and SKY clocks for Gladys Assistant, over their local API.",
   "type": "module",

@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-10-15
+
 ### Added
 
 - LaMetric TIME and LaMetric SKY clocks, over their local device API (API
@@ -29,4 +31,5 @@ the notes of the version's GitHub Release.
   the problem.
 - English, French, German and Spanish, documentation included.
 
-[Unreleased]: https://github.com/guim31/gladys-lametric/commits/main
+[Unreleased]: https://github.com/guim31/gladys-lametric/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/guim31/gladys-lametric/releases/tag/v1.0.1

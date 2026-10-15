@@ -8,8 +8,8 @@
     "de": "LaMetric TIME und SKY: Nachrichten aus Szenen, Helligkeit, Lautstärke, Apps und Timer.",
     "es": "Relojes LaMetric TIME y SKY: mensajes de sus escenas, brillo, volumen, aplicaciones y temporizador."
   },
-  "version": "1.0.0",
-  "docker_image": "ghcr.io/guim31/gladys-lametric:1.0.0",
+  "version": "1.0.1",
+  "docker_image": "ghcr.io/guim31/gladys-lametric:1.0.1",
   "gladys_version": ">=5.2.0",
   "cover_image": "https://raw.githubusercontent.com/guim31/gladys-lametric/main/cover.png",
   "categories": ["notifications", "multimedia"],
